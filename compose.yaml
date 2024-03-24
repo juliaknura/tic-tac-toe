@@ -1,0 +1,19 @@
+version: '3.0'
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ./Dockerfile
+    container_name: tictactoe_backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    depends_on:
+      - backend
+    build:
+      context: ./frontend
+      dockerfile: ./Dockerfile
+    container_name: tictactoe_frontend
+    ports:
+      - "3000:3000"
