@@ -3,7 +3,9 @@ import './App.css';
 import {Client} from '@stomp/stompjs'
 import axios from 'axios';
 
-const url = 'http://localhost:8080';
+//const ip = "localhost"
+const ip = process.env.REACT_APP_BACKEND_IP;
+const url = 'http://' + ip + ':8080';
 
 function App() {
   const [gameId, setGameId] = useState('');
@@ -28,7 +30,7 @@ function App() {
   const connectToSocket = (gameId) => {
     const client = new Client();
     client.configure({
-      brokerURL: 'ws://localhost:8080/gameplay', // Adjusted to match your original URL and endpoint
+      brokerURL: 'ws://'+ip+':8080/gameplay', // Adjusted to match your original URL and endpoint
       reconnectDelay: 5000,
       onConnect: () => {
         console.log('Connected');
@@ -61,6 +63,10 @@ function App() {
       return;
     }
     try {
+      console.log(process.env);
+      console.log("IPS:");
+      console.log(url);
+      console.log(process.env.REACT_APP_BACKEND_IP);
       const response = await axios.post(url + "/game/start", {nickname: nickname});
       setGameId(response.data.gameId);
       setPlayerType('X');
@@ -163,7 +169,7 @@ function App() {
           <input
               type="text"
               id="gameId"
-              placeholder="Enter game ID"
+              placeholder="Game ID"
               value={gameId}
               onChange={handleGameIdChange}
               style={{width: '100%', marginBottom: '20px', padding: '10px'}}

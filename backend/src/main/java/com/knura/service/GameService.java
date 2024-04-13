@@ -71,9 +71,17 @@ public class GameService {
         Boolean oWinner = checkWinner(game.getBoard(), TicTacToeSymbols.O);
 
         if(xWinner)
+        {
             game.setWinner(TicTacToeSymbols.X);
+            game.getPlayer1().setScore(1);
+            game.getPlayer2().setScore(0);
+        }
         else if (oWinner)
+        {
             game.setWinner(TicTacToeSymbols.O);
+            game.getPlayer1().setScore(0);
+            game.getPlayer2().setScore(1);
+        }
 
         String turn;
         if(game.getCurrentTurn().equals("O")) {
