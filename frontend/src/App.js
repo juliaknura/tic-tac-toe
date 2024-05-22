@@ -2,6 +2,10 @@ import React, {useEffect, useState} from 'react';
 import './App.css';
 import {Client} from '@stomp/stompjs'
 import axios from 'axios';
+import SignUp from './SignUp'
+import SignIn from './SignIn'
+import SignOut from './SignOut'
+import {refreshSessionTokenIfNeeded} from './CognitoUtils'
 
 //const ip = "localhost"
 const ip = process.env.REACT_APP_BACKEND_IP;
@@ -62,12 +66,20 @@ function App() {
       alert("Please enter nickname");
       return;
     }
+    await refreshSessionTokenIfNeeded();
+
+    const accessToken = localStorage.getItem('accessToken');
+
     try {
       console.log(process.env);
       console.log("IPS:");
       console.log(url);
       console.log(process.env.REACT_APP_BACKEND_IP);
-      const response = await axios.post(url + "/game/start", {nickname: nickname});
+      const response = await axios.post(url + "/game/start", {nickname: nickname}, {
+         headers: {
+           'Authorization': `Bearer ${accessToken}`
+         }
+      });
       setGameId(response.data.gameId);
       setPlayerType('X');
       setCurrentTurn('X');
@@ -87,9 +99,18 @@ function App() {
     if (!nickname) {
       alert("Please enter nickname");
       return;
-    }
+    } //TODO
+
+    await refreshSessionTokenIfNeeded();
+
+    const accessToken = localStorage.getItem('accessToken');
+
     try {
-      const response = await axios.post(url + "/game/connect/random", {nickname});
+      const response = await axios.post(url + "/game/connect/random", {nickname}, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
       setGameId(response.data.gameId);
       setPlayerType('O');
       start();
@@ -108,12 +129,21 @@ function App() {
 
     if (!gameOn || currentTurn !== playerType) return;
 
+    await refreshSessionTokenIfNeeded();
+
+    const accessToken = localStorage.getItem('accessToken');
+
     try {
       const response = await axios.post(url + "/game/gameplay", {
         type: playerType,
         coordinateX: xCoordinate,
         coordinateY: yCoordinate,
         gameId,
+      },
+      {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`
+          }
       });
       displayResponse(response.data, playerType);
     } catch (error) {
@@ -148,70 +178,80 @@ function App() {
 
   return (
       <div style={{background: '#212121', color: '#666', fontFamily: 'Arial, sans-serif'}}>
-        <h1 style={{color: '#fff'}}>Tic Tac Toe</h1>
-        <div id="box" style={{
-          background: '#666',
-          padding: '20px',
-          borderRadius: '10px',
-          maxWidth: '350px',
-          margin: '40px auto',
-          overflow: 'auto'
-        }}>
-          <input
-              type="text"
-              id="nickname"
-              placeholder="Enter your nickname"
-              value={nickname}
-              onChange={handleNicknameChange}
-              style={{width: '100%', marginBottom: '20px', padding: '10px'}}
-          />
-          <button onClick={createGame}>Create Game</button>
-          <input
-              type="text"
-              id="gameId"
-              placeholder="Game ID"
-              value={gameId}
-              onChange={handleGameIdChange}
-              style={{width: '100%', marginBottom: '20px', padding: '10px'}}
-          />
-          <button onClick={connectToRandom}>Connect to Random Game</button>
+        {localStorage.getItem('accessToken') ? (
+        <div>
+            <h1 style={{color: '#fff'}}>Tic Tac Toe</h1>
+            <div id="box" style={{
+              background: '#666',
+              padding: '20px',
+              borderRadius: '10px',
+              maxWidth: '350px',
+              margin: '40px auto',
+              overflow: 'auto'
+            }}>
+              <input
+                  type="text"
+                  id="nickname"
+                  placeholder="Enter your nickname"
+                  value={nickname}
+                  onChange={handleNicknameChange}
+                  style={{width: '100%', marginBottom: '20px', padding: '10px'}}
+              />
+              <button onClick={createGame}>Create Game</button>
+              <input
+                  type="text"
+                  id="gameId"
+                  placeholder="Game ID"
+                  value={gameId}
+                  onChange={handleGameIdChange}
+                  style={{width: '100%', marginBottom: '20px', padding: '10px'}}
+              />
+              <button onClick={connectToRandom}>Connect to Random Game</button>
 
-          <ul id="gameBoard" style={{listStyle: 'none', padding: 0}}>
-            {turns.map((row, i) =>
-                row.map((cell, j) => (
-                    <li
-                        key={`${i}-${j}`}
-                        onClick={() => makeAMove(i, j)}
-                        style={{
-                          float: 'left',
-                          margin: '10px',
-                          height: '70px',
-                          width: '70px',
-                          fontSize: '50px',
-                          background: '#333',
-                          color: '#ccc',
-                          textAlign: 'center',
-                          borderRadius: '5px'
-                        }}
-                        className={cell === 'X' ? 'x' : cell === 'O' ? 'o' : ''}
-                    >
-                      {cell !== '#' ? cell : ''}
-                    </li>
-                ))
-            )}
-          </ul>
-          <div className="clearfix" style={{clear: 'both'}}></div>
+              <ul id="gameBoard" style={{listStyle: 'none', padding: 0}}>
+                {turns.map((row, i) =>
+                    row.map((cell, j) => (
+                        <li
+                            key={`${i}-${j}`}
+                            onClick={() => makeAMove(i, j)}
+                            style={{
+                              float: 'left',
+                              margin: '10px',
+                              height: '70px',
+                              width: '70px',
+                              fontSize: '50px',
+                              background: '#333',
+                              color: '#ccc',
+                              textAlign: 'center',
+                              borderRadius: '5px'
+                            }}
+                            className={cell === 'X' ? 'x' : cell === 'O' ? 'o' : ''}
+                        >
+                          {cell !== '#' ? cell : ''}
+                        </li>
+                    ))
+                )}
+              </ul>
+              <div className="clearfix" style={{clear: 'both'}}></div>
+            </div>
+            <footer style={{textAlign: 'center', paddingTop: '20px'}}>
+              <div>
+                {player1 != null && player2 != null && (
+                    <div>
+                      <div>{player1} score: {player1Score}</div>
+                      <div>{player2} score: {player2Score}</div>
+                    </div>
+                )}
+              </div>
+            </footer>
+            <SignOut />
         </div>
-        <footer style={{textAlign: 'center', paddingTop: '20px'}}>
-          <div>
-            {player1 != null && player2 != null && (
-                <div>
-                  <div>{player1} score: {player1Score}</div>
-                  <div>{player2} score: {player2Score}</div>
-                </div>
-            )}
-          </div>
-        </footer>
+      ) : (
+        <>
+            <SignIn />
+            <SignUp />
+        </>
+      )}
       </div>
   )
 
