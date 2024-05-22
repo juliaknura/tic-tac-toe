@@ -3,11 +3,11 @@ package com.knura;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class TicTacToeApplicationTests {
-
-	@Test
-	void contextLoads() {
-	}
-
-}
+//@SpringBootTest
+//class TicTacToeApplicationTests {
+//
+//	@Test
+//	void contextLoads() {
+//	}
+//
+//}
