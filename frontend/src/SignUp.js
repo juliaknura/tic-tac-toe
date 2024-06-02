@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import UserPool from "./UserPool";
-import { CognitoUserAttribute } from 'amazon-cognito-identity-js';
+import { CognitoUserAttribute, CognitoUser } from 'amazon-cognito-identity-js';
 import "./Cognito.css"
 
 const SignUp = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [verificationCode, setVerificationCode] = useState('');
+    const [isVerificationVisible, setIsVerificationVisible] = useState(false);
 
     const manageSignUp = async(e) => {
         e.preventDefault();
@@ -25,30 +27,39 @@ const SignUp = () => {
                     alert(err.message || JSON.stringify(err));
                     return;
                 }
-                var cognitoUser = result.user;
-                console.log('user name is ' + cognitoUser.getUsername());
-
-                const verificationCode = prompt('Please input verification code: ', '');
-
-                if(verificationCode) {
-                    cognitoUser.confirmRegistration(verificationCode, false, function (err, result) {
-                    	if (err) {
-                    		alert(err.message || JSON.stringify(err));
-                    		return;
-                    	}
-                    	console.log('call result: ' + result);
-                    });
-                } else {
-                    console.log("User cancelled verification code input");
-                }
+                console.log('user name is ' + result.user.getUsername());
+                setIsVerificationVisible(true);
+                setEmail('');
+                setPassword('');
+                alert("Verification code for user "+result.user.getUsername()+" needed");
             });
 
 
     };
 
+    const confirmRegistration = async(e) => {
+            e.preventDefault();
+            const userData = {
+                Username: username,
+                Pool: UserPool
+            };
+            const cognitoUser = new CognitoUser(userData);
+
+            cognitoUser.confirmRegistration(verificationCode, true, function (err, result) {
+                if (err) {
+                    alert(err.message || JSON.stringify(err));
+                    return;
+                }
+                console.log('verification result: ' + result);
+                alert("Verification successful");
+                setIsVerificationVisible(false);
+            });
+        };
+
     return (
         <div className="text-center" id="loginBox">
             {
+                <>
                 <form className="registerForm" onSubmit={manageSignUp}>
                     <input
                         className="loginInput"
@@ -71,8 +82,31 @@ const SignUp = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
-                    <button className="loginButton" type="submit">Sign up</button>
+                    <button
+                        className="loginButton"
+                        type="submit"
+                    >
+                        Sign up
+                    </button>
                 </form>
+                {isVerificationVisible && (
+                    <form className="registerForm" onSubmit={confirmRegistration}>
+                    <input
+                        className="loginInput"
+                        type="text"
+                        placeholder="Verification Code"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                    />
+                    <button
+                        className="loginButton"
+                        type="submit"
+                    >
+                        Confirm Registration
+                    </button>
+                    </form>
+                )}
+                </>
             }
         </div>
     );
